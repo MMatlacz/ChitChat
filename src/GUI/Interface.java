@@ -3,29 +3,23 @@ package GUI;
 import Analizer.Analizer;
 import Analizer.Words;
 import javafx.application.Application;
-import javafx.beans.property.DoubleProperty;
-import javafx.beans.property.SimpleDoubleProperty;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.chart.BarChart;
 import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.NumberAxis;
-import javafx.scene.chart.XYChart;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
-import javafx.scene.layout.Background;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
-import java.awt.*;
+import java.io.File;
 
 /**
  * Created by marcin on 5/5/15.
@@ -33,6 +27,7 @@ import java.awt.*;
 
 public class Interface extends Application {
     private static boolean answer;
+    private static boolean isMarkSet = false;
     private Stage window;
 
 
@@ -57,7 +52,7 @@ public class Interface extends Application {
         chat.setVbarPolicy(ScrollPane.ScrollBarPolicy.ALWAYS);
         GridPane.setConstraints(chat, 0, 0);
         GridPane.setMargin(chat, new Insets(5, 5, 5, 5));
-            //setting chat window content
+        //setting chat window content
         chat.setContent(new VBox());
         ((VBox) chat.getContent()).setMaxWidth(300);
 
@@ -73,7 +68,7 @@ public class Interface extends Application {
         //Wykres
         final NumberAxis xAxis = new NumberAxis();
         final CategoryAxis yAxis = new CategoryAxis();
-        final BarChart<Number,String> bc = new BarChart<Number,String>(xAxis,yAxis);
+        final BarChart<Number, String> bc = new BarChart<Number, String>(xAxis, yAxis);
         xAxis.setLabel("Liczba wystąpień");
         //xAxis.setTickLabelRotation(90);
         yAxis.setLabel("Wyrazy");
@@ -106,7 +101,7 @@ public class Interface extends Application {
                     int value = 2;
                     try {
                         value = Integer.decode(mark.getText());
-                    }catch (NumberFormatException e){
+                    } catch (NumberFormatException e) {
                         //ustaw domyślny
                         value = 2;
                     }
@@ -119,7 +114,8 @@ public class Interface extends Application {
                         layout.getChildren().addAll(markLabel);
                     }
 
-
+                    Words.initializeDictionary(MyFileChooser.fileChooser());
+                    isMarkSet = true;
                 }
             }
         });
@@ -128,9 +124,9 @@ public class Interface extends Application {
             @Override
             public void handle(KeyEvent ke) {
                 if (ke.getCode().equals(KeyCode.ENTER)) {
+                    String ans = null;
                     chat.getContent().minWidth(300);
                     chat.getContent().maxWidth(300);
-                    //zrob tu porzadek
                     Label tmp = new Label(textPrompt.getText());
                     tmp.setStyle("-fx-background-color: green; -fx-background-radius: 5; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.8), 10, 0, 0, 0);");
                     tmp.setPadding(new Insets(5, 5, 5, 5));
@@ -140,21 +136,34 @@ public class Interface extends Application {
                     ((VBox) chat.getContent()).getChildren().add(tmp);
 
                     //przetworzenie wpisanego textu
-                    String ans = Analizer.generateAnswer(textPrompt.getText());
-                    //odpowiedz
-                    Label answer = new Label(ans);
-                    answer.setStyle("-fx-background-color: yellow; -fx-background-radius: 5; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.8), 10, 0, 0, 0);");
-                    answer.setPadding(new Insets(5, 5, 5, 5));
-                    answer.setWrapText(true);
-                    answer.setPrefWidth(150);
-                    answer.setAlignment(Pos.CENTER_RIGHT);
-                    VBox.setMargin(answer, new Insets(0, 0, 0, 150));
-                    ((VBox) chat.getContent()).getChildren().add(answer);
-                    textPrompt.clear();
-                    //aktualizuj statystyki
-                    bc.getData().clear();
-                    bc.getData().addAll(Analizer.setStats());
-                    chat.setVvalue(1);
+                    if(isMarkSet) {
+                        ans = Analizer.generateAnswer(textPrompt.getText());
+                        //odpowiedz
+                        Label answer = new Label(ans);
+                        answer.setStyle("-fx-background-color: yellow; -fx-background-radius: 5; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.8), 10, 0, 0, 0);");
+                        answer.setPadding(new Insets(5, 5, 5, 5));
+                        answer.setWrapText(true);
+                        answer.setPrefWidth(150);
+                        answer.setAlignment(Pos.CENTER_RIGHT);
+                        VBox.setMargin(answer, new Insets(0, 0, 0, 150));
+                        ((VBox) chat.getContent()).getChildren().add(answer);
+                        textPrompt.clear();
+                        //aktualizuj statystyki
+                        bc.getData().clear();
+                        bc.getData().addAll(Analizer.setStats());
+                        chat.setVvalue(1);
+                    } else {
+                        ans = "Ustaw stopień ngramów!";
+                        Label answer = new Label(ans);
+                        answer.setStyle("-fx-background-color: yellow; -fx-background-radius: 5; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.8), 10, 0, 0, 0);");
+                        answer.setPadding(new Insets(5, 5, 5, 5));
+                        answer.setWrapText(true);
+                        answer.setPrefWidth(150);
+                        answer.setAlignment(Pos.CENTER_RIGHT);
+                        VBox.setMargin(answer, new Insets(0, 0, 0, 150));
+                        ((VBox) chat.getContent()).getChildren().add(answer);
+                        textPrompt.clear();
+                    }
                 }
             }
         });
@@ -165,7 +174,6 @@ public class Interface extends Application {
         window.setScene(scene);
         //Turn window on
         window.show();
-        Words.initializeDictionary(MyFileChooser.fileChooser());
     }
 
     //Action on close request

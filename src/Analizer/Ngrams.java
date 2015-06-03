@@ -6,7 +6,7 @@ import java.util.*;
  * Created by marcin on 5/16/15.
  */
 public class Ngrams {
-    private int mark = 2; //domyslna wartość stopnia ngramu 2
+    private static int mark = 2; //domyslna wartość stopnia ngramu 2
     private HashMap<String, Ngram> ngrams; //zawiera prefixy jako klucze i Ngramy jako wartości
     private static Ngrams ngramsContainer = null;
     private int numberOfNgrams;
