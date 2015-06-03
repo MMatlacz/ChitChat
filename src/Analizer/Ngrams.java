@@ -6,14 +6,12 @@ import java.util.*;
  * Created by marcin on 5/16/15.
  */
 public class Ngrams {
-    private static int mark = 2; //domyslna wartość stopnia ngramu 2
-    private int processedIndex; //index ostatniego przetworzonego wyrazu
-    private HashMap<Integer, Ngram> ngrams; //zawiera referencje do ngramów jako klucze i liczbę wystąpień jako wartości
+    private int mark = 2; //domyslna wartość stopnia ngramu 2
+    private HashMap<String, Ngram> ngrams; //zawiera prefixy jako klucze i Ngramy jako wartości
     private static Ngrams ngramsContainer = null;
     private int numberOfNgrams;
     private Ngrams(){
         ngrams = new HashMap<>();
-        processedIndex = 0;
         numberOfNgrams = 0;
     }
     public static Ngrams getInstance(){
@@ -22,33 +20,51 @@ public class Ngrams {
         }
         return ngramsContainer;
     }
-    public HashMap<Integer, Ngram> getMap(){
+    public HashMap<String, Ngram> getMap(){
         return this.ngrams;
     }
 
     public static void processText(ArrayList<String> text){
-        Words instance = Words.getInstance();
-        for(int i = getInstance().processedIndex; i < text.size() - getMark(); i++){
-            getInstance().addNgram(i);
-            getInstance().processedIndex++;
+        while(getInstance().numberOfNgrams < text.size() - getMark()) {
+            addNgram(getInstance().numberOfNgrams, text);
+            getInstance().numberOfNgrams++;
         }
     }
     public static int getMark(){
-        return mark;
+        return getInstance().mark;
     }
     public static void setMark(int m){
-        mark = m;
+        getInstance().mark = m;
     }
-    public static void addNgram(int index){
-        Ngram temp = new Ngram(index);
-        if( (getInstance().ngrams.get(index)) == null ){
-            getInstance().ngrams.put(index, new Ngram(index));
-            getInstance().numberOfNgrams++;
+    public static void addNgram(int index, ArrayList<String> text){
+        //prefix
+        StringBuilder prefix = new StringBuilder();
+        for(int i = 0; i < getMark(); i++){
+            prefix.append(text.get(index + i));
+            prefix.append(" ");
+        }
+        //sufix
+        StringBuilder sufix = new StringBuilder();
+        sufix.append(text.get(index + getMark()));
+        //logika
+        Ngram tmp;
+        if ((tmp = findNgram(prefix.toString())) != null) {
+            tmp.addSufix(sufix.toString());
+        } else {
+            tmp = new Ngram(prefix.toString(), sufix.toString());
+            getInstance().getMap().put(prefix.toString(), tmp);
         }
 
     }
-    public static Ngram findNgram(Integer index){
-        return getInstance().getMap().get(index);
+    public static Ngram getRandomNgram(){
+        String[] pref = null;
+        Object[] prefixes = getInstance().getMap().keySet().toArray();
+        Random generator = new Random();
+        String prefix = ((String) prefixes[generator.nextInt(prefixes.length)]);
+        return getInstance().getMap().get(prefix);
+    }
+    public static Ngram findNgram(String prefix){
+        return getInstance().getMap().get(prefix);
     }
 
 }

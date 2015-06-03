@@ -49,20 +49,19 @@ public class Words {
         } catch (Exception e) {
             System.out.println("Wystąpił błąd odczytu pliku: " + e);
         }
+        Ngrams.processText(getInstance().words);
+        getInstance().words.clear();
     }
 
     public static Integer addText(String string) {
+        string = string.trim();
         String[] str = string.split(" ");
         Integer index = getInstance().words.size();
-        for (String s : str) {
-            getInstance().words.add(s);
-        }
-        Ngrams.processText(getInstance().words);
-
-        //do usuniecia
-        Set<Integer> set = Ngrams.getInstance().getMap().keySet();
-        for(Integer temp: set){
-            System.out.println(Ngrams.getInstance().getMap().get(temp).getPrefix() + " " + Ngrams.getInstance().getMap().get(temp).getSufixes());
+        for(String s : str) {
+            if(s.equals(" ") || s.equals("")){
+                continue;
+            }
+                getInstance().words.add(s.trim());
         }
         return index;
     }

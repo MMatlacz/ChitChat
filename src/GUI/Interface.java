@@ -3,11 +3,17 @@ package GUI;
 import Analizer.Analizer;
 import Analizer.Words;
 import javafx.application.Application;
+import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.chart.BarChart;
+import javafx.scene.chart.CategoryAxis;
+import javafx.scene.chart.NumberAxis;
+import javafx.scene.chart.XYChart;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
@@ -28,7 +34,7 @@ import java.awt.*;
 public class Interface extends Application {
     private static boolean answer;
     private Stage window;
-    private int counter = 0;//usun
+
 
     @Override
     public void start(Stage stage) throws Exception {
@@ -55,45 +61,7 @@ public class Interface extends Application {
         chat.setContent(new VBox());
         ((VBox) chat.getContent()).setMaxWidth(300);
 
-        //Chat text field
-        TextField textPrompt = new TextField();
-        textPrompt.setPromptText("Napisz coś! Zatwierdź ENTEREM");
-        GridPane.setConstraints(textPrompt, 0, 1);
-        GridPane.setMargin(textPrompt, new Insets(5, 5, 5, 5));
-        textPrompt.setOnKeyPressed(new EventHandler<KeyEvent>() {
-            @Override
-            public void handle(KeyEvent ke) {
-                if (ke.getCode().equals(KeyCode.ENTER)) {
-                    //poprzez fasade
-                    Analizer.generateAnswer(textPrompt.getText());
-                    //do usuniecia bez fasady
-                    Words.addText(textPrompt.getText());
-                    chat.getContent().minWidth(300);
-                    chat.getContent().maxWidth(300);
-                    //zrob tu porzadek
-                    if (counter % 2 == 0) {
-                        Label tmp = new Label(textPrompt.getText());
-                        tmp.setStyle("-fx-background-color: yellow; -fx-background-radius: 5; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.8), 10, 0, 0, 0);");
-                        tmp.setPadding(new Insets(5, 5, 5, 5));
-                        tmp.setWrapText(true);
-                        tmp.setPrefWidth(150);
-                        tmp.setAlignment(Pos.CENTER_RIGHT);
-                        VBox.setMargin(tmp, new Insets(0, 0, 0, 150));
-                        ((VBox) chat.getContent()).getChildren().add(tmp);
-                    } else {
-                        Label tmp = new Label(textPrompt.getText());
-                        tmp.setStyle("-fx-background-color: green; -fx-background-radius: 5; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.8), 10, 0, 0, 0);");
-                        tmp.setPadding(new Insets(5, 5, 5, 5));
-                        tmp.setWrapText(true);
-                        tmp.setPrefWidth(150);
-                        VBox.setMargin(tmp, new Insets(0, 0, 0, 0));
-                        ((VBox) chat.getContent()).getChildren().add(tmp);
-                    }
-                    textPrompt.clear();
-                    counter++;
-                }
-            }
-        });
+
         //Stats
         ScrollPane stats = new ScrollPane();
         stats.setMinViewportHeight(300);
@@ -102,6 +70,26 @@ public class Interface extends Application {
         stats.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         GridPane.setConstraints(stats, 1, 0);
         GridPane.setMargin(stats, new Insets(5, 5, 5, 5));
+        //Wykres
+        final NumberAxis xAxis = new NumberAxis();
+        final CategoryAxis yAxis = new CategoryAxis();
+        final BarChart<Number,String> bc = new BarChart<Number,String>(xAxis,yAxis);
+        xAxis.setLabel("Liczba wystąpień");
+        //xAxis.setTickLabelRotation(90);
+        yAxis.setLabel("Wyrazy");
+
+        //wymiary wykresu
+        bc.setPrefSize(300, 300);
+
+        //dodaj obiekt BarChart
+        stats.setContent(bc);
+
+
+        //Chat text field
+        TextField textPrompt = new TextField();
+        textPrompt.setPromptText("Napisz coś! Zatwierdź ENTEREM");
+        GridPane.setConstraints(textPrompt, 0, 1);
+        GridPane.setMargin(textPrompt, new Insets(5, 5, 5, 5));
         //Ngram mark selector
         TextField mark = new TextField();
         mark.setPromptText("Stopień ngramu Zatwierdź ENTEREM");
@@ -109,6 +97,68 @@ public class Interface extends Application {
         GridPane.setMargin(mark, new Insets(5, 5, 5, 5));
         //add elements to layout
         layout.getChildren().addAll(chat, textPrompt, stats, mark);
+        //Action on setting mark
+        mark.setOnKeyPressed(new EventHandler<KeyEvent>() {
+            @Override
+            public void handle(KeyEvent ke) {
+                if (ke.getCode().equals(KeyCode.ENTER)) {
+                    //domyślny
+                    int value = 2;
+                    try {
+                        value = Integer.decode(mark.getText());
+                    }catch (NumberFormatException e){
+                        //ustaw domyślny
+                        value = 2;
+                    }
+                    if (value > 0) {
+                        Analizer.setMark(value);
+                        layout.getChildren().removeAll(mark);
+                        Label markLabel = new Label(mark.getText());
+                        GridPane.setConstraints(markLabel, 1, 1);
+                        GridPane.setMargin(markLabel, new Insets(5, 5, 5, 5));
+                        layout.getChildren().addAll(markLabel);
+                    }
+
+
+                }
+            }
+        });
+        //Sterowanie aktualizacją
+        textPrompt.setOnKeyPressed(new EventHandler<KeyEvent>() {
+            @Override
+            public void handle(KeyEvent ke) {
+                if (ke.getCode().equals(KeyCode.ENTER)) {
+                    chat.getContent().minWidth(300);
+                    chat.getContent().maxWidth(300);
+                    //zrob tu porzadek
+                    Label tmp = new Label(textPrompt.getText());
+                    tmp.setStyle("-fx-background-color: green; -fx-background-radius: 5; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.8), 10, 0, 0, 0);");
+                    tmp.setPadding(new Insets(5, 5, 5, 5));
+                    tmp.setWrapText(true);
+                    tmp.setPrefWidth(150);
+                    VBox.setMargin(tmp, new Insets(0, 0, 0, 0));
+                    ((VBox) chat.getContent()).getChildren().add(tmp);
+
+                    //przetworzenie wpisanego textu
+                    String ans = Analizer.generateAnswer(textPrompt.getText());
+                    //odpowiedz
+                    Label answer = new Label(ans);
+                    answer.setStyle("-fx-background-color: yellow; -fx-background-radius: 5; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.8), 10, 0, 0, 0);");
+                    answer.setPadding(new Insets(5, 5, 5, 5));
+                    answer.setWrapText(true);
+                    answer.setPrefWidth(150);
+                    answer.setAlignment(Pos.CENTER_RIGHT);
+                    VBox.setMargin(answer, new Insets(0, 0, 0, 150));
+                    ((VBox) chat.getContent()).getChildren().add(answer);
+                    textPrompt.clear();
+                    //aktualizuj statystyki
+                    bc.getData().clear();
+                    bc.getData().addAll(Analizer.setStats());
+                    chat.setVvalue(1);
+                }
+            }
+        });
+
         //New scene
         Scene scene = new Scene(layout, 650, 380);
         //Set windows scene
